@@ -1,5 +1,4 @@
 const dispatch = require('../dispatch/central-dispatch');
-const PedaloBlocks = require('../extensions/pedaloBlocks');
 const log = require('../util/log');
 const maybeFormatMessage = require('../util/maybe-format-message');
 
