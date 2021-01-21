@@ -14,6 +14,7 @@ class PedaloBlocks {
          * @type {Runtime}
          */
         this.runtime = runtime;
+        this.ws = new WebSocket('ws://localhost:8888');
     }
 
     /**
@@ -42,7 +43,24 @@ class PedaloBlocks {
     }
 
     myReporter (){
-        return 'I am reporter block';
+        if (this.connection()){
+            this.ws.send('Test Message');
+            const messagePromise = new Promise(resolve => {
+                this.ws.onmessage = function (event) {
+                    resolve(event.data);
+                };
+            });
+            messagePromise.then(message => message);
+            return messagePromise;
+        }
+        // eslint-disable-next-line no-alert
+        alert('Reconnecting to sensors, please try again');
+    }
+    connection () {
+        if (this.ws.readyState === 1){
+            return true;
+        }
+        this.ws = new WebSocket('ws://localhost:8888');
     }
 
 }
