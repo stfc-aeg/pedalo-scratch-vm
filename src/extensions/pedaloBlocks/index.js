@@ -25,7 +25,7 @@ class PedaloBlocks {
             id: 'pedaloBlocks',
             name: formatMessage({
                 id: 'extensionName',
-                default: 'Some Blocks',
+                default: 'PEDALO blocks',
                 description: 'The name of the "PedaloBlocks" extension'
             }),
             blocks: [
@@ -37,6 +37,15 @@ class PedaloBlocks {
                         description: 'The first block to be created'
                     }),
                     blockType: BlockType.REPORTER
+                },
+                {
+                    opcode: 'changeColor',
+                    text: formatMessage({
+                        id: 'pedaloBlocks.testBlock',
+                        default: 'Change colour',
+                        description: 'Testing command block'
+                    }),
+                    blockType: BlockType.COMMAND
                 }
             ]
         };
@@ -56,11 +65,18 @@ class PedaloBlocks {
         // eslint-disable-next-line no-alert
         alert('Reconnecting to sensors, please try again');
     }
+
     connection () {
         if (this.ws.readyState === 1){
             return true;
         }
         this.ws = new WebSocket('ws://localhost:8888');
+    }
+
+    // Color ranges from 0 to 200 where 0 is original orange
+    changeColor (args, util){
+        util.target.setEffect('color', util.target.effects.color + 10);
+        return util.target.effects.color;
     }
 
 }
