@@ -14,7 +14,6 @@ class PedaloBlocks {
          * @type {Runtime}
          */
         this.runtime = runtime;
-        this.ws = new WebSocket('ws://localhost:8888');
     }
 
     /**
@@ -52,25 +51,25 @@ class PedaloBlocks {
     }
 
     myReporter (){
-        if (this.connection()){
-            this.ws.send('Test Message');
-            const messagePromise = new Promise(resolve => {
-                this.ws.onmessage = function (event) {
+        return new Promise((resolve => {
+            this.connection().then(server => {
+                const ws = server;
+                ws.send('Test Message');
+                ws.onmessage = function (event) {
+                    ws.close();
                     resolve(event.data);
                 };
             });
-            messagePromise.then(message => message);
-            return messagePromise;
-        }
-        // eslint-disable-next-line no-alert
-        alert('Reconnecting to sensors, please try again');
+        }));
     }
 
     connection () {
-        if (this.ws.readyState === 1){
-            return true;
-        }
-        this.ws = new WebSocket('ws://localhost:8888');
+        return new Promise((resolve => {
+            const server = new WebSocket('ws://localhost:8888');
+            server.onopen = function () {
+                resolve(server);
+            };
+        }));
     }
 
     // Color ranges from 0 to 200 where 0 is original orange
