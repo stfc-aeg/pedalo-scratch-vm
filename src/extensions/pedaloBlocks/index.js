@@ -1,5 +1,6 @@
 // Core, Team, and Official extensions can `require` VM code:
 const BlockType = require('../../extension-support/block-type');
+const ArgumentType = require('../../extension-support/argument-type');
 
 // ...or VM dependencies:
 const formatMessage = require('format-message');
@@ -40,21 +41,37 @@ class PedaloBlocks {
                 {
                     opcode: 'changeColor',
                     text: formatMessage({
-                        id: 'pedaloBlocks.testBlock',
+                        id: 'pedaloBlocks.changeColor',
                         default: 'Change colour',
                         description: 'Testing command block'
                     }),
                     blockType: BlockType.COMMAND
+                },
+                {
+                    opcode: 'talkToServer',
+                    text: formatMessage({
+                        id: 'pedaloBlocks.sendMessage',
+                        default: 'Send Command with argument [ARGS]',
+                        description: 'Testing command block'
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        ARGS: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'defaultArgs'
+                        }
+                    }
                 }
             ]
         };
     }
 
     myReporter (){
+        const message = JSON.stringify({Command: 'Test Message', Args: ''});
         return new Promise((resolve => {
             this.connection().then(server => {
                 const ws = server;
-                ws.send('Test Message');
+                ws.send(message);
                 ws.onmessage = function (event) {
                     ws.close();
                     resolve(event.data);
@@ -76,6 +93,20 @@ class PedaloBlocks {
     changeColor (args, util){
         util.target.setEffect('color', util.target.effects.color + 10);
         return util.target.effects.color;
+    }
+
+    talkToServer (args){
+        const message = JSON.stringify({Command: 'Set offset', Args: args.ARGS});
+        return new Promise((resolve => {
+            this.connection().then(server => {
+                const ws = server;
+                ws.send(message);
+                ws.onmessage = function (event) {
+                    ws.close();
+                    resolve(event.data);
+                };
+            });
+        }));
     }
 
 }
