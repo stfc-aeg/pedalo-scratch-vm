@@ -15,6 +15,7 @@ class PedaloBlocks {
          * @type {Runtime}
          */
         this.runtime = runtime;
+        this.dict = new Map();
     }
 
     /**
@@ -66,26 +67,36 @@ class PedaloBlocks {
         };
     }
 
-    myReporter (){
+    myReporter (args, util){
+        const self = this;
+        const spriteId = util.target.id;
         const message = JSON.stringify({Command: 'Test Message', Args: ''});
         return new Promise((resolve => {
-            this.connection().then(server => {
-                const ws = server;
-                ws.send(message);
-                ws.onmessage = function (event) {
-                    ws.close();
-                    resolve(event.data);
-                };
+            this.connection(util).then(connected => {
+                if (connected === true){
+                    self.dict.get(spriteId).server.send(message);
+                    self.dict.get(spriteId).server.onmessage = function (event) {
+                        resolve(event.data);
+                    };
+                }
             });
         }));
     }
 
-    connection () {
+    connection (util) {
+        const self = this;
         return new Promise((resolve => {
-            const server = new WebSocket('ws://localhost:8888');
-            server.onopen = function () {
-                resolve(server);
-            };
+            // eslint-disable-next-line no-negated-condition
+            if (!(self.dict.has(util.target.id))){
+                const server = new WebSocket('ws://localhost:8888');
+                const spriteId = util.target.id;
+                server.onopen = function () {
+                    self.dict.set(spriteId, {server});
+                    resolve(true);
+                };
+            } else {
+                resolve(true);
+            }
         }));
     }
 
@@ -95,16 +106,18 @@ class PedaloBlocks {
         return util.target.effects.color;
     }
 
-    talkToServer (args){
+    talkToServer (args, util){
+        const self = this;
+        const spriteId = util.target.id;
         const message = JSON.stringify({Command: 'Set offset', Args: args.ARGS});
         return new Promise((resolve => {
-            this.connection().then(server => {
-                const ws = server;
-                ws.send(message);
-                ws.onmessage = function (event) {
-                    ws.close();
-                    resolve(event.data);
-                };
+            this.connection(util).then(connected => {
+                if (connected === true){
+                    self.dict.get(spriteId).server.send(message);
+                    self.dict.get(spriteId).server.onmessage = function (event) {
+                        resolve(event.data);
+                    };
+                }
             });
         }));
     }
