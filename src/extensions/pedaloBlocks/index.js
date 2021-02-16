@@ -68,9 +68,14 @@ class PedaloBlocks {
     }
 
     myReporter (args, util){
+        const message = JSON.stringify({Command: 'Get temperature', Args: ''});
+        const messageback = this._sendMessage(args, util, message);
+        return messageback;
+    }
+
+    _sendMessage (args, util, message){
         const self = this;
         const spriteId = util.target.id;
-        const message = JSON.stringify({Command: 'Test Message', Args: ''});
         return new Promise((resolve => {
             this.connection(util).then(connected => {
                 if (connected === true){
@@ -85,17 +90,16 @@ class PedaloBlocks {
 
     connection (util) {
         const self = this;
+        const spriteId = util.target.id;
         return new Promise((resolve => {
-            // eslint-disable-next-line no-negated-condition
-            if (!(self.dict.has(util.target.id))){
-                const server = new WebSocket('ws://localhost:8888');
-                const spriteId = util.target.id;
+            if (self.dict.has(spriteId) && self.dict.get(spriteId).server.readyState === 1){
+                resolve(true);
+            } else {
+                const server = new WebSocket('ws://192.168.1.159:8888');
                 server.onopen = function () {
                     self.dict.set(spriteId, {server});
                     resolve(true);
                 };
-            } else {
-                resolve(true);
             }
         }));
     }
