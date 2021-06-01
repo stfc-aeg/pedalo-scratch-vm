@@ -22,43 +22,6 @@ class Pedalo {
         this._extensionId = extensionId;
     }
 
-    scan () {
-        console.log('This is scan');
-    }
-
-    connect () {
-        console.log('This is connect');
-    }
-
-    disconnect () {
-        console.log('This is disconnect');
-    }
-
-    reset () {
-        console.log('This is reset');
-    }
-
-    isConnected () {
-        console.log('Thi is connected');
-    }
-
-    send (command, message) {
-        console.log('This is send');
-    }
-
-    _onConnect () {
-        console.log('This is onConnect');
-    }
-
-    _onMessage (base64) {
-        console.log('This is onMessage');
-
-    }
-
-    _checkPinState (pin) {
-        console.log('This is checkPinState');
-    }
-
 }
 class PedaloBlocks {
     constructor (runtime) {
@@ -91,25 +54,25 @@ class PedaloBlocks {
                     opcode: 'getTemperature', // becomes 'PedaloBlocks.myReporter'
                     text: formatMessage({
                         id: 'pedaloBlocks.myReporter',
-                        default: 'Get the temperature from sensor',
+                        default: 'Get temperature from sensor',
                         description: 'Use this block to get temperature from sensor'
                     }),
                     blockType: BlockType.REPORTER
                 },
                 {
-                    opcode: 'test',
+                    opcode: 'openGraph',
                     text: formatMessage({
                         id: 'pedaloBlocks.test',
-                        default: 'Test block',
-                        description: 'Use this block to get temperature from sensor'
+                        default: 'Show graph',
+                        description: 'Use this block to show graph'
                     }),
-                    blockType: BlockType.REPORTER
+                    blockType: BlockType.COMMAND
                 },
                 {
                     opcode: 'changeColor',
                     text: formatMessage({
                         id: 'pedaloBlocks.changeColor',
-                        default: 'Change colour [COLOUR]',
+                        default: 'Change colour to [COLOUR]',
                         description: 'Testing command block'
                     }),
                     blockType: BlockType.COMMAND,
@@ -122,22 +85,19 @@ class PedaloBlocks {
                     }
                 },
                 {
-                    opcode: 'getGasR',
-                    text: formatMessage({
-                        id: 'pedaloBlocks.getGasR',
-                        default: 'Get gas resistance from sensor',
-                        description: 'Use this block to get resistance from sensor'
-                    }),
-                    blockType: BlockType.REPORTER
-                },
-                {
                     opcode: 'writeToFile',
                     text: formatMessage({
                         id: 'pedaloBlocks.writeToFile',
-                        default: 'Write to CSV file',
-                        description: 'Use this block to get resistance from sensor'
+                        default: 'Write to CSV file [WRITE]',
+                        description: 'Use this block to write to csv file'
                     }),
-                    blockType: BlockType.COMMAND
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        WRITE: {
+                            type: ArgumentType.BOOLEAN,
+                            defaultValue: true
+                        }
+                    }
                 },
                 {
                     opcode: 'penDown',
@@ -152,7 +112,7 @@ class PedaloBlocks {
                     opcode: 'getReadings',
                     text: formatMessage({
                         id: 'pedaloBlocks.getData',
-                        default: 'Get all data [READING]',
+                        default: 'Get [READING] from sensor',
                         description: 'Use this block to get data from sensor'
                     }),
                     blockType: BlockType.REPORTER,
@@ -176,7 +136,7 @@ class PedaloBlocks {
 
     _getReadingsList (){
         const p = new Promise(resolve => {
-            const req = http.request('http://192.168.1.159:8888/list', res => {
+            const req = http.request('localhost:8888/list', res => {
                 res.on('data', d => {
                     const string = new TextDecoder().decode(d);
                     resolve((JSON.parse(string)).Keys);
@@ -247,25 +207,19 @@ class PedaloBlocks {
     }
 
     writeToFile (args, util){
-        const message = JSON.stringify({Command: 'change_csv_setting', Args: ''});
+        const message = JSON.stringify({Command: 'change_csv_setting', Args: args.WRITE});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
 
-    test (args, util){
+    openGraph (args, util){
         const message = JSON.stringify({Command: 'plot_graph_msg', Args: ''});
         const messageback = this._sendMessage(args, util, message);
-        return messageback;
+        window.open('localhost/graph');
     }
 
     getChannels (args, util){
         const message = JSON.stringify({Command: 'get_channels_msg', Args: ''});
-        const messageback = this._sendMessage(args, util, message);
-        return messageback;
-    }
-
-    getGasR (args, util){
-        const message = JSON.stringify({Command: 'get_gas_r_msg', Args: ''});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
@@ -298,7 +252,7 @@ class PedaloBlocks {
             if (self.dict.has(spriteId) && self.dict.get(spriteId).server.readyState === 1){
                 resolve(true);
             } else {
-                const server = new WebSocket('ws://192.168.1.159:8888');
+                const server = new WebSocket('ws://localhost:8888');
                 server.onopen = function () {
                     self.dict.set(spriteId, {server});
                     resolve(true);
