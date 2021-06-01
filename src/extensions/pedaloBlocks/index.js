@@ -2,13 +2,6 @@
 const BlockType = require('../../extension-support/block-type');
 const ArgumentType = require('../../extension-support/argument-type');
 const http = require('http');
-const RenderedTarget = require('../../sprites/rendered-target');
-const StageLayering = require('../../engine/stage-layering');
-const Scratch3PenBlocks = require('../scratch3_pen/index');
-const Clone = require('../../util/clone');
-
-
-// ...or VM dependencies:
 const formatMessage = require('format-message');
 
 // Core, Team, and Official extension classes should be registered statically with the Extension Manager.
@@ -51,7 +44,7 @@ class PedaloBlocks {
             }),
             blocks: [
                 {
-                    opcode: 'getTemperature', // becomes 'PedaloBlocks.myReporter'
+                    opcode: 'getTemperature',
                     text: formatMessage({
                         id: 'pedaloBlocks.myReporter',
                         default: 'Get temperature from sensor',
@@ -133,7 +126,9 @@ class PedaloBlocks {
             }
         };
     }
-
+    /**
+     * Method to retrieve all possible readings that are supported for connected server.
+     */
     _getReadingsList (){
         const p = new Promise(resolve => {
             const req = http.request('localhost:8888/list', res => {
@@ -149,87 +144,81 @@ class PedaloBlocks {
         });
     }
 
+    /**
+     * Method to return all supported keys that were retrieved by _getReadingsList.
+     * @return {object} returned keys as array
+     */
     returnReadingMenu (){
         this._getReadingsList();
         return this.readingsMenu;
     }
 
-    _getPenLayerID () {
-        if (this._penSkinId < 0 && this.runtime.renderer) {
-            this._penSkinId = this.runtime.renderer.createPenSkin();
-            this._penDrawableId = this.runtime.renderer.createDrawable(StageLayering.PEN_LAYER);
-            this.runtime.renderer.updateDrawableSkinId(this._penDrawableId, this._penSkinId);
-        }
-        return this._penSkinId;
-    }
-
-    _getPenState (target) {
-        let penState = target.getCustomState(Scratch3PenBlocks.STATE_KEY);
-        if (!penState) {
-            penState = Clone.simple(Scratch3PenBlocks.DEFAULT_PEN_STATE);
-            target.setCustomState(Scratch3PenBlocks.STATE_KEY, penState);
-        }
-        return penState;
-    }
-
-    _onTargetMoved (target, oldX, oldY, isForce) {
-        // Only move the pen if the movement isn't forced (ie. dragged).
-        if (!isForce) {
-            const penSkinId = this._getPenLayerID();
-            if (penSkinId >= 0) {
-                const penState = this._getPenState(target);
-                this.runtime.renderer.penLine(penSkinId, penState.penAttributes, oldX, oldY, target.x, target.y);
-                this.runtime.requestRedraw();
-            }
-        }
-    }
-
-    penDown (args, util) {
-        const target = util.target;
-        const penState = this._getPenState(target);
-
-        if (!penState.penDown) {
-            penState.penDown = true;
-            target.addListener(RenderedTarget.EVENT_TARGET_MOVED, this._onTargetMoved);
-        }
-
-        const penSkinId = this._getPenLayerID();
-        if (penSkinId >= 0) {
-            this.runtime.renderer.penLine(penSkinId, penState.penAttributes, 0, 0, 100, 100);
-            this.runtime.requestRedraw();
-        }
-    }
-
+    /**
+     * Methods to return temperature reading from sensor via websocket.
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     * @return {JSON} reading returned by server
+     */
     getTemperature (args, util){
         const message = JSON.stringify({Command: 'get_temp_msg', Args: ''});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
 
+    /**
+     * Methods to enable and disable writing to file feature.
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     * @return {JSON} reply returned by server
+     */
     writeToFile (args, util){
         const message = JSON.stringify({Command: 'change_csv_setting', Args: args.WRITE});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
 
+    /**
+     * Methods to open a new graph page in browser (not known if supported by desktop application)
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     */
     openGraph (args, util){
         const message = JSON.stringify({Command: 'plot_graph_msg', Args: ''});
         const messageback = this._sendMessage(args, util, message);
         window.open('localhost/graph');
     }
-
+    /**
+     * Methods to return all channels from sensor via websocket.
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     * @return {JSON} all available channels returned by server
+     */
     getChannels (args, util){
         const message = JSON.stringify({Command: 'get_channels_msg', Args: ''});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
-
+    /**
+     * Methods to return any reading from sensor via websocket.
+     * The reading retrieved is specified in args.READING argument
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     * @return {JSON} reading returned by server
+     */
     getReadings (args, util){
         const message = JSON.stringify({Command: 'get_data_msg', Args: args.READING});
         const messageback = this._sendMessage(args, util, message);
         return messageback;
     }
 
+    /**
+     * Main method to communicate with server via websocket.
+     * It sends a message and waits for reply.
+     * @param {string} args Arguments passed when calling this function
+     * @param {object} util Utility information about sprite that called this function
+     * @param {object} message a message that will be sent to server
+     * @return {Promise} Promise is used when waiting for reply from server
+     */
     _sendMessage (args, util, message){
         const self = this;
         const spriteId = util.target.id;
@@ -244,7 +233,13 @@ class PedaloBlocks {
             });
         }));
     }
-
+    /**
+     * Main method to setup a connection via websocket.
+     * Each sprite can have one websocket. If sprite already has a websocket
+     * it does not create a new one, but just uses the old one.
+     * @param {object} util Utility information about sprite that called this function
+     * @return {Promise} Promise is used when waiting for socket to be opened
+     */
     _connection (util) {
         const self = this;
         const spriteId = util.target.id;
