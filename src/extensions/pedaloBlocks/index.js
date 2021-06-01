@@ -46,7 +46,7 @@ class PedaloBlocks {
                 {
                     opcode: 'getTemperature',
                     text: formatMessage({
-                        id: 'pedaloBlocks.myReporter',
+                        id: 'pedaloBlocks.getTemperature',
                         default: 'Get temperature from sensor',
                         description: 'Use this block to get temperature from sensor'
                     }),
@@ -55,7 +55,7 @@ class PedaloBlocks {
                 {
                     opcode: 'openGraph',
                     text: formatMessage({
-                        id: 'pedaloBlocks.test',
+                        id: 'pedaloBlocks.openGraph',
                         default: 'Show graph',
                         description: 'Use this block to show graph'
                     }),
@@ -93,7 +93,7 @@ class PedaloBlocks {
                     }
                 },
                 {
-                    opcode: 'penDown',
+                    opcode: 'getChannels',
                     text: formatMessage({
                         id: 'pedaloBlocks.getChannels',
                         default: 'Draw line',
@@ -104,7 +104,7 @@ class PedaloBlocks {
                 {
                     opcode: 'getReadings',
                     text: formatMessage({
-                        id: 'pedaloBlocks.getData',
+                        id: 'pedaloBlocks.getReadings',
                         default: 'Get [READING] from sensor',
                         description: 'Use this block to get data from sensor'
                     }),
